@@ -13,6 +13,6 @@ namespace RestlessFalcon.Models
         public double Humidity { get; set; }
         public double Pressure { get; set; }
         public double ValvePosition { get; set; }
-        public DateTime Time { get; set; }
+        public string Time { get; set; }
     }
 }
