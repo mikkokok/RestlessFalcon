@@ -1,10 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using Dapper;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using RestlessFalcon.Helpers;
 using RestlessFalcon.Models;
@@ -15,8 +13,8 @@ namespace RestlessFalcon.Controllers
     [ApiController]
     public class AuthorisationController : RestlessFalconControllerBase
     {
-        private string ConStringName = Constants.AUTHORISATIONCONNECTIONSTRINGNAME;
-        // GET: api/Authorisation
+        private string ConnectionStringName = Constants.AUTHORISATIONCONNECTIONSTRINGNAME;
+        
         public AuthorisationController(IDatabaseHelper dbHelper) : base(dbHelper)
         {
         }
@@ -24,7 +22,7 @@ namespace RestlessFalcon.Controllers
         [HttpGet]
         public IEnumerable<string> GetUsers(string authKey)
         {
-            using (IDbConnection conn = _dbHelper.GetDatabaseConnection(ConStringName))
+            using (IDbConnection conn = _dbHelper.GetDatabaseConnection(ConnectionStringName))
             {
                 var query = "SELECT * FROM AuthUser";
                 conn.Open();
@@ -34,9 +32,11 @@ namespace RestlessFalcon.Controllers
         }
 
         [HttpPost("authkey")]
-        public async Task<IActionResult> AuthKey()
+        public async Task<IActionResult> AuthKey(int keyId, string authKey)
         {
-            await base._authKeyHelper.RenewAuthKey();
+            if (!_authKeyHelper.CheckAuthKeyValidity(authKey))
+                return Forbid();
+            await _authKeyHelper.RenewAuthKey(keyId);
 
             return Ok();
         }

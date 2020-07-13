@@ -10,5 +10,6 @@ namespace RestlessFalcon
         public const string AUTHORISATIONCONNECTIONSTRINGNAME = "AuthorisationConnection";
         public const string STORYCONNECTIONSTRINGNAME = "StoryConnection";
         public const string GIFREPOCONNECTIONSTRINGNAME = "GifRepoConnection";
+        public const string SENSORSCONNECTIONSTRINGNAME = "SensorsConnection";
     }
 }

@@ -1,5 +1,6 @@
 ﻿using System.Data;
 using System.Data.SqlClient;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.Extensions.Configuration;
 
 namespace RestlessFalcon.Helpers.Impl
@@ -14,9 +15,13 @@ namespace RestlessFalcon.Helpers.Impl
             _config = config;
         }
 
+        
+
         public IDbConnection GetDatabaseConnection(string connectionString)
         {
             return new SqlConnection(_config.GetConnectionString(connectionString));
         }
+
+        public IConfiguration Config => _config;
     }
 }

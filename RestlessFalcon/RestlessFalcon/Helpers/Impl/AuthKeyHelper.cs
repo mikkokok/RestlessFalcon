@@ -4,43 +4,61 @@ using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading.Tasks;
 using Dapper;
+using Microsoft.Extensions.Configuration;
 using RestlessFalcon.Models;
 
 namespace RestlessFalcon.Helpers.Impl
 {
     public class AuthKeyHelper
     {
-        private IDatabaseHelper _dbHelper;
+        private readonly IDatabaseHelper _dbHelper;
+        private readonly IConfiguration _config;
 
-        public AuthKeyHelper(IDatabaseHelper dbHelper)
+        public AuthKeyHelper(IDatabaseHelper dbHelper, IConfiguration config)
         {
             _dbHelper = dbHelper;
+            _config = config;
+
         }
 
         public bool CheckAuthKeyValidity(string authKey)
         {
-            using (var conn = _dbHelper.GetDatabaseConnection(Constants.AUTHORISATIONCONNECTIONSTRINGNAME))
+            try
             {
-                var query = "SELECT * FROM AuthKey";
-                conn.Open();
-                var result = conn.Query<AuthKey>(query);
-                if (result.Select(key => key.Value).Contains(authKey))
+                if (authKey == _config.GetSection("MasterKey").Value)
                 {
                     return true;
                 }
+
+                using (var conn = _dbHelper.GetDatabaseConnection(Constants.AUTHORISATIONCONNECTIONSTRINGNAME))
+                {
+                    var query = "SELECT * FROM AuthKey";
+                    conn.Open();
+                    var result = conn.Query<AuthKey>(query);
+                    if (result.Select(key => key.Value).Contains(authKey))
+                    {
+                        return true;
+                    }
+                }
             }
+            catch
+            {
+                // ignored
+            }
+
             return false;
         }
-        public async Task RenewAuthKey()
+        public async Task<string> RenewAuthKey(int id)
         {
             using (var conn = _dbHelper.GetDatabaseConnection(Constants.AUTHORISATIONCONNECTIONSTRINGNAME))
             {
-                var query = "DELETE FROM AuthKey";
+                var query = $"DELETE FROM AuthKey WHERE id = {id}";
                 conn.Open();
                 await conn.QueryAsync<AuthKey>(query);
                 var newKey = Guid.NewGuid();
-                query = $"INSERT INTO AuthKey(Value) VALUES ('{newKey}')";
+                query = $"INSERT INTO AuthKey(Value) VALUES ('{newKey.ToString()}')";
                 await conn.QueryAsync(query);
+                return newKey.ToString();
             }
         }
 

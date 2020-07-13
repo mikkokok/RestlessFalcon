@@ -24,7 +24,6 @@ namespace RestlessFalcon.Controllers
         [HttpGet]
         public async Task<IEnumerable<GifUrl>> Get()
         {
-            var ret = new Dictionary<string, string>();
             using (var conn = _dbHelper.GetDatabaseConnection(Constants.GIFREPOCONNECTIONSTRINGNAME))
             {
                 const string query = "SELECT * FROM GifUrl";
