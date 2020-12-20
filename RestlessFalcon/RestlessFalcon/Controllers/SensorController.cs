@@ -7,6 +7,9 @@ using RestlessFalcon.Models;
 
 namespace RestlessFalcon.Controllers
 {
+    /// <summary>
+    /// API Controller for handling new sensors in the environment
+    /// </summary>
     [Route("api/[controller]")]
     [ApiController]
     public class SensorController : RestlessFalconControllerBase
@@ -14,7 +17,10 @@ namespace RestlessFalcon.Controllers
         public SensorController(IDatabaseHelper dbHelper) : base(dbHelper)
         {
         }
-
+        /// <summary>
+        /// Fetches all sensors from the database
+        /// </summary>
+        /// <returns></returns>
         [HttpGet]
         public async Task<IEnumerable<Sensor>> GetSensors()
         {
@@ -26,7 +32,12 @@ namespace RestlessFalcon.Controllers
                 return results;
             }
         }
-
+        /// <summary>
+        /// Creates new sensor for the environment
+        /// </summary>
+        /// <param name="sensor"></param>
+        /// <param name="authKey"></param>
+        /// <returns>HTTP status code</returns>
         [HttpPost]
         public async Task<IActionResult> Post([FromBody] Sensor sensor, string authKey)
         {
@@ -48,7 +59,12 @@ namespace RestlessFalcon.Controllers
             }
             return Ok();
         }
-
+        /// <summary>
+        /// Deletes sensor
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="authKey"></param>
+        /// <returns>HTTP status code</returns>
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id, string authKey)
         {

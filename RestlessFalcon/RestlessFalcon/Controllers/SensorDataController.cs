@@ -9,6 +9,9 @@ using RestlessFalcon.Models;
 
 namespace RestlessFalcon.Controllers
 {
+    /// <summary>
+    /// Creates sensor data entries
+    /// </summary>
     [Route("api/[controller]")]
     [ApiController]
     public class SensorDataController : RestlessFalconControllerBase
@@ -16,7 +19,10 @@ namespace RestlessFalcon.Controllers
         public SensorDataController(IDatabaseHelper dbHelper) : base(dbHelper)
         {
         }
-
+        /// <summary>
+        /// Fetches all entries of sensor data
+        /// </summary>
+        /// <returns>Returns list of sensor data entries</returns>
         [HttpGet]
         public async Task<IEnumerable<SensorData>> GetSensorData()
         {
@@ -28,7 +34,13 @@ namespace RestlessFalcon.Controllers
                 return results;
             }
         }
-
+        /// <summary>
+        /// Adds new entry of sensor data
+        /// </summary>
+        /// <param name="data"></param>
+        /// <param name="sensorName"></param>
+        /// <param name="authKey"></param>
+        /// <returns>HTTP status code</returns>
         [HttpPost]
         public async Task<IActionResult> Post([FromBody] SensorData data, string sensorName, string authKey)
         {
