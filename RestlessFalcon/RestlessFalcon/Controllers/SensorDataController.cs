@@ -52,11 +52,8 @@ namespace RestlessFalcon.Controllers
             catch (Exception ex)
             {
                 Console.WriteLine(ex);
-                
             }
-
             return Ok();
         }
-        
     }
 }
