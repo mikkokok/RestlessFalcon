@@ -20,15 +20,49 @@ namespace RestlessFalcon.Controllers
         {
         }
         /// <summary>
-        /// Fetches all entries of sensor data
+        /// Fetches all entries of sensor data. Optional filters sensorid and number of history per days
         /// </summary>
-        /// <returns>Returns list of sensor data entries</returns>
+        /// <returns>Returns list of sensor data entries. Optional filters sensorid and number of history per days</returns>
         [HttpGet]
-        public async Task<IEnumerable<SensorData>> GetSensorData()
+        public async Task<IEnumerable<SensorData>> SensorData(int id = 0, int ago = 0)
+        {
+            if (id == 0)
+            {
+                return await GetSensorData();
+            }
+            if (ago == 0)
+            {
+                return await GetSensorData(id);
+            }
+            return await GetSensorData(id, ago);
+        }
+
+        private async Task<IEnumerable<SensorData>> GetSensorData()
         {
             using (var conn = _dbHelper.GetDatabaseConnection(Constants.SENSORSCONNECTIONSTRINGNAME))
             {
                 const string query = "SELECT * FROM Data";
+                conn.Open();
+                var results = await conn.QueryAsync<SensorData>(query);
+                return results;
+            }
+        }
+        private async Task<IEnumerable<SensorData>> GetSensorData(int id)
+        {
+            using (var conn = _dbHelper.GetDatabaseConnection(Constants.SENSORSCONNECTIONSTRINGNAME))
+            {
+                string query = $"SELECT * FROM Data WHERE SensorId = {id}";
+                conn.Open();
+                var results = await conn.QueryAsync<SensorData>(query);
+                return results;
+            }
+        }
+
+        private async Task<IEnumerable<SensorData>> GetSensorData(int id, int ago)
+        {
+            using (var conn = _dbHelper.GetDatabaseConnection(Constants.SENSORSCONNECTIONSTRINGNAME))
+            {
+                string query = $"SELECT * FROM Data WHERE SensorId = {id} AND Time > getdate()-{ago}";
                 conn.Open();
                 var results = await conn.QueryAsync<SensorData>(query);
                 return results;
