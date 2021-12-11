@@ -20,54 +20,60 @@ namespace RestlessFalcon.Controllers
         {
         }
         /// <summary>
-        /// Fetches all entries of sensor data. Optional filters sensorid and number of history per days
+        /// Fetches all entries of sensor data. Optional filters sensorid, number of history per days and amount of entries that are fetched
         /// </summary>
-        /// <returns>Returns list of sensor data entries. Optional filters sensorid and number of history per days</returns>
+        /// <returns>Returns list of sensor data entries. Optional filters sensorid,number of history per days and amount of entries that are fetched</returns>
         [HttpGet]
-        public async Task<IEnumerable<SensorData>> SensorData(int id = 0, int ago = 0)
+        public async Task<IEnumerable<SensorData>> SensorData(int id = 0, int ago = 0, int amount = 0)
         {
-            if (id == 0)
+            return await GetSensorData(id, ago, amount);
+        }
+        private async Task<IEnumerable<SensorData>> GetSensorData(int id, int ago, int amount)
+        {
+            string query = "SELECT * FROM Data WHERE 1=1";
+            string idQuery = $" AND SensorId = {id}";
+            string agoQuery = $" AND Time > getdate()-{ago}";
+            string amountQueryTop = $"SELECT TOP {amount} * FROM Data WHERE 1=1";
+            string queryOrder = $" ORDER BY Time DESC";
+
+
+            if (amount != 0)
             {
-                return await GetSensorData();
+                if (id == 0 && ago != 0)
+                {
+                    query = amountQueryTop + agoQuery + queryOrder;
+                }
+                if (ago == 0 && id != 0)
+                {
+                    query = amountQueryTop + idQuery + queryOrder;
+                }
+                if (id == 0 && ago == 0)
+                {
+                    query = amountQueryTop + queryOrder;
+                }
             }
-            if (ago == 0)
+            else
             {
-                return await GetSensorData(id);
+                if (id == 0 && ago != 0)
+                {
+                    query += agoQuery + queryOrder;
+                }
+                if (ago == 0 && id != 0 )
+                {
+                    query += idQuery + queryOrder;
+                }
+                if (id != 0 && ago != 0)
+                {
+                    query += idQuery + agoQuery + queryOrder;
+                }
             }
-            return await GetSensorData(id, ago);
+
+            using var conn = _dbHelper.GetDatabaseConnection(Constants.SENSORSCONNECTIONSTRINGNAME);
+            conn.Open();
+            var results = await conn.QueryAsync<SensorData>(query);
+            return results;
         }
 
-        private async Task<IEnumerable<SensorData>> GetSensorData()
-        {
-            using (var conn = _dbHelper.GetDatabaseConnection(Constants.SENSORSCONNECTIONSTRINGNAME))
-            {
-                const string query = "SELECT * FROM Data";
-                conn.Open();
-                var results = await conn.QueryAsync<SensorData>(query);
-                return results;
-            }
-        }
-        private async Task<IEnumerable<SensorData>> GetSensorData(int id)
-        {
-            using (var conn = _dbHelper.GetDatabaseConnection(Constants.SENSORSCONNECTIONSTRINGNAME))
-            {
-                string query = $"SELECT * FROM Data WHERE SensorId = {id}";
-                conn.Open();
-                var results = await conn.QueryAsync<SensorData>(query);
-                return results;
-            }
-        }
-
-        private async Task<IEnumerable<SensorData>> GetSensorData(int id, int ago)
-        {
-            using (var conn = _dbHelper.GetDatabaseConnection(Constants.SENSORSCONNECTIONSTRINGNAME))
-            {
-                string query = $"SELECT * FROM Data WHERE SensorId = {id} AND Time > getdate()-{ago}";
-                conn.Open();
-                var results = await conn.QueryAsync<SensorData>(query);
-                return results;
-            }
-        }
         /// <summary>
         /// Adds new entry of sensor data
         /// </summary>
