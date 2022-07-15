@@ -67,11 +67,19 @@ namespace RestlessFalcon.Controllers
                     query += idQuery + agoQuery + queryOrder;
                 }
             }
+            try
+            {
+                using var conn = _dbHelper.GetDatabaseConnection(Constants.SENSORSCONNECTIONSTRINGNAME);
+                conn.Open();
+                var results = await conn.QueryAsync<SensorData>(query);
+                return results;
+            }
+            catch (Exception ex)
+            {
+                _logger.WriteErrorLog(ex.Message);
+                throw;
+            }
 
-            using var conn = _dbHelper.GetDatabaseConnection(Constants.SENSORSCONNECTIONSTRINGNAME);
-            conn.Open();
-            var results = await conn.QueryAsync<SensorData>(query);
-            return results;
         }
 
         /// <summary>
@@ -103,7 +111,7 @@ namespace RestlessFalcon.Controllers
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                _logger.WriteErrorLog(ex.Message);
             }
             return Ok();
         }

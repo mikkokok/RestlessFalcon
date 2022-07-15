@@ -8,11 +8,13 @@ namespace RestlessFalcon.Controllers
     {
         protected readonly IDatabaseHelper _dbHelper;
         protected AuthKeyHelper _authKeyHelper;
+        protected Logger _logger;
 
         public RestlessFalconControllerBase(IDatabaseHelper dbHelper)
         {
             _dbHelper = dbHelper;
             _authKeyHelper = new AuthKeyHelper(_dbHelper, _dbHelper.Config);
+            _logger = new Logger();
         }
     }
 }

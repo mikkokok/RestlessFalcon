@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Dapper;
 using Microsoft.AspNetCore.Mvc;
@@ -24,13 +25,20 @@ namespace RestlessFalcon.Controllers
         [HttpGet]
         public async Task<IEnumerable<Sensor>> GetSensors()
         {
-            using (var conn = _dbHelper.GetDatabaseConnection(Constants.SENSORSCONNECTIONSTRINGNAME))
+            try
             {
+                using var conn = _dbHelper.GetDatabaseConnection(Constants.SENSORSCONNECTIONSTRINGNAME);
                 const string query = "SELECT * FROM Sensors";
                 conn.Open();
                 var results = await conn.QueryAsync<Sensor>(query);
                 return results;
             }
+            catch (Exception ex)
+            {
+                _logger.WriteErrorLog(ex.Message);
+                throw;
+            }
+
         }
         /// <summary>
         /// Creates new sensor for the environment
@@ -53,8 +61,9 @@ namespace RestlessFalcon.Controllers
                     await conn.QueryAsync<Sensor>(query);
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                _logger.WriteErrorLog(ex.Message);
                 return NotFound();
             }
             return Ok();
@@ -79,8 +88,9 @@ namespace RestlessFalcon.Controllers
                     await conn.QueryAsync<Sensor>(query);
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                _logger.WriteErrorLog(ex.Message);
                 return NotFound();
             }
             return Ok();
