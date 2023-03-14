@@ -1,11 +1,9 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.28307.705
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.33414.496
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RestlessFalcon", "RestlessFalcon\RestlessFalcon.csproj", "{6A7FD07B-03D5-4725-835C-43CB0E59D077}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RestlessFalconDatabase", "CannedFalcon\RestlessFalconDatabase.csproj", "{C98D8AB0-1EC1-44EA-8CD8-DFB0A1DD1927}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -17,10 +15,6 @@ Global
 		{6A7FD07B-03D5-4725-835C-43CB0E59D077}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6A7FD07B-03D5-4725-835C-43CB0E59D077}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6A7FD07B-03D5-4725-835C-43CB0E59D077}.Release|Any CPU.Build.0 = Release|Any CPU
-		{C98D8AB0-1EC1-44EA-8CD8-DFB0A1DD1927}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{C98D8AB0-1EC1-44EA-8CD8-DFB0A1DD1927}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{C98D8AB0-1EC1-44EA-8CD8-DFB0A1DD1927}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{C98D8AB0-1EC1-44EA-8CD8-DFB0A1DD1927}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -34,7 +34,7 @@ namespace RestlessFalcon.Controllers
             string idQuery = $" AND SensorId = {id}";
             string agoQuery = $" AND Time > getdate()-{ago}";
             string amountQueryTop = $"SELECT TOP {amount} * FROM Data WHERE 1=1";
-            string queryOrder = $" ORDER BY Time DESC";
+            string queryOrder = " ORDER BY Time DESC";
 
 
             if (amount != 0)
