@@ -35,7 +35,7 @@ namespace RestlessFalcon.Controllers
         {
             string query = "SELECT * FROM Prices WHERE 1=1";
             string agoQuery = $" AND Date > getdate()-{ago}";
-            string dateQuery = $" AND Date = {date}";
+            string dateQuery = $" AND Date = '{date}'";
 
             if (ago != 0)
             {

@@ -15,7 +15,9 @@ namespace RestlessFalcon.Models
         public double ValvePosition { get; set; }
         public string Time { get; set; }
         public float UsedPower { get; set; }
-
         public int BurnerUseTime { get; set; }
+        public int PowerYield { get; set; }
+
+        
     }
 }

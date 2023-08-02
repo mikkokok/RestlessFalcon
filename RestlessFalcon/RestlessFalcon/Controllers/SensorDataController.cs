@@ -100,7 +100,7 @@ namespace RestlessFalcon.Controllers
             }
 
             var nfi = new CultureInfo("en-US", false).NumberFormat;
-            var query = $"INSERT INTO Data(SensorId, Temperature, Humidity, Pressure, ValvePosition, UsedPower, Time, BurnerUseTime) VALUES ((SELECT id FROM Sensors WHERE Name = '{sensorName}'), {data.Temperature.ToString(nfi)}, {data.Humidity.ToString(nfi)}, {data.Pressure.ToString(nfi)}, {data.ValvePosition}, '{data.UsedPower.ToString(nfi)}', '{data.Time}', '{data.BurnerUseTime}')";
+            var query = $"INSERT INTO Data(SensorId, Temperature, Humidity, Pressure, ValvePosition, UsedPower, Time, BurnerUseTime, PowerYield) VALUES ((SELECT id FROM Sensors WHERE Name = '{sensorName}'), {data.Temperature.ToString(nfi)}, {data.Humidity.ToString(nfi)}, {data.Pressure.ToString(nfi)}, {data.ValvePosition}, '{data.UsedPower.ToString(nfi)}', '{data.Time}', '{data.BurnerUseTime}', '{data.PowerYield}')";
             try
             {
                 using (var conn = _dbHelper.GetDatabaseConnection(Constants.SENSORSCONNECTIONSTRINGNAME))
