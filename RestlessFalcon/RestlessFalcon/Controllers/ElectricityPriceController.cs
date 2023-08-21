@@ -34,8 +34,8 @@ namespace RestlessFalcon.Controllers
         private async Task<IEnumerable<ElectricityPrice>> GetElectricityPrice(int ago, string date)
         {
             string query = "SELECT * FROM Prices WHERE 1=1";
-            string agoQuery = $" AND Date > getdate()-{ago}";
-            string dateQuery = $" AND Date = '{date}'";
+            string agoQuery = $" AND CAST(date AS DATE) BETWEEN DATEADD(DAY, -{ago}, CAST(GETDATE() AS DATE)) AND CAST(GETDATE() AS DATE)";
+            string dateQuery = $" AND CAST(Date AS DATE) = '{date}'";
 
             if (ago != 0)
             {
@@ -44,6 +44,10 @@ namespace RestlessFalcon.Controllers
             if (!string.IsNullOrWhiteSpace(date))
             {
                 query += dateQuery;
+            }
+            if (ago == 0)
+            {
+                query += " AND CAST(Date AS DATE) = CAST(GETDATE() AS DATE)";
             }
 
             try
@@ -71,8 +75,7 @@ namespace RestlessFalcon.Controllers
         {
             if (!_authKeyHelper.CheckAuthKeyValidity(authKey))
                 return Forbid();
-
-            var nfi = new CultureInfo("en-US", false).NumberFormat;
+            _ = new CultureInfo("en-US", false).NumberFormat;
             var query = $"SELECT Hour, Price FROM Prices WHERE Date = '{prices[0].Date}'";
 
             try
