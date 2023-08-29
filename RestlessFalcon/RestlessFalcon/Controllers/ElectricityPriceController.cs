@@ -24,7 +24,7 @@ namespace RestlessFalcon.Controllers
         /// <summary>
         /// Fetches all entries of electricity price data. Optional filters number of history per days and entries for exact date
         /// </summary>
-        /// <returns>Returns list of sensor data entries. Optional filters sensorid,number of history per days and amount of entries that are fetched</returns>
+        /// <returns>Returns list of sensor data entries. Optional filters number of history per days and entries for exact date</returns>
         [HttpGet]
         public async Task<IEnumerable<ElectricityPrice>> ElectricityPrice(int ago = 0, string date = "")
         {
@@ -45,7 +45,7 @@ namespace RestlessFalcon.Controllers
             {
                 query += dateQuery;
             }
-            if (ago == 0)
+            else if (ago == 0)
             {
                 query += " AND CAST(Date AS DATE) = CAST(GETDATE() AS DATE)";
             }
@@ -76,7 +76,7 @@ namespace RestlessFalcon.Controllers
             if (!_authKeyHelper.CheckAuthKeyValidity(authKey))
                 return Forbid();
             _ = new CultureInfo("en-US", false).NumberFormat;
-            var query = $"SELECT Hour, Price FROM Prices WHERE Date = '{prices[0].Date}'";
+            var query = $"SELECT * FROM Prices WHERE CAST(Date AS DATE) = '{prices[0].Date}'";
 
             try
             {
@@ -86,7 +86,7 @@ namespace RestlessFalcon.Controllers
                     var results = await conn.QueryAsync<ElectricityPrice>(query);
                     if (results.Any() && results.Count() < 24)
                     {
-                        await conn.ExecuteAsync($"DELETE FROM Prices WHERE Date = {prices[0].Date}");
+                        await conn.ExecuteAsync($"DELETE FROM Prices WHERE CAST(Date AS DATE) = {prices[0].Date}");
                     }
                     else if (results.Count() == 24)
                     {
@@ -118,7 +118,5 @@ namespace RestlessFalcon.Controllers
             }
             return Ok();
         }
-
-
     }
 }
