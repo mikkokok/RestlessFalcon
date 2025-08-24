@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Data;
+﻿using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using Dapper;
@@ -11,28 +10,20 @@ namespace RestlessFalcon.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class AuthorisationController : RestlessFalconControllerBase
+    public class AuthorisationController(IDatabaseHelper dbHelper) : RestlessFalconControllerBase(dbHelper)
     {
-        private string ConnectionStringName = Constants.AUTHORISATIONCONNECTIONSTRINGNAME;
-        
-        public AuthorisationController(IDatabaseHelper dbHelper) : base(dbHelper)
-        {
-        }
-
         [HttpGet]
-        public IEnumerable<string> GetUsers(string authKey)
+        public async Task<ActionResult<string>> GetUsers()
         {
-            using (IDbConnection conn = _dbHelper.GetDatabaseConnection(ConnectionStringName))
-            {
-                var query = "SELECT * FROM AuthUser";
-                conn.Open();
-                var result = conn.Query<AuthUser>(query);
-                return result.Select(user => user.Name);
-            }
+            using IDbConnection conn = _dbHelper.GetDatabaseConnection(Constants.AUTHORISATIONCONNECTIONSTRINGNAME);
+            var query = "SELECT * FROM AuthUser";
+            conn.Open();
+            var result = await conn.QueryAsync<AuthUser>(query);
+            return Ok(result.Select(user => user.Name ?? string.Empty));
         }
 
-        [HttpPost("authkey")]
-        public async Task<IActionResult> AuthKey(int keyId, string authKey)
+        [HttpPost]
+        public async Task<IActionResult> Post([FromBody] string authKey, int keyId)
         {
             if (!_authKeyHelper.CheckAuthKeyValidity(authKey))
                 return Forbid();

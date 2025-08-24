@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Threading.Tasks;
 using System;
-using System.Data.SqlClient;
 using System.Linq;
 
 namespace RestlessFalcon.Controllers
@@ -21,17 +20,13 @@ namespace RestlessFalcon.Controllers
         public ElectricityPriceController(IDatabaseHelper dbHelper) : base(dbHelper)
         {
         }
+
         /// <summary>
         /// Fetches all entries of electricity price data. Optional filters number of history per days and entries for exact date
         /// </summary>
         /// <returns>Returns list of sensor data entries. Optional filters number of history per days and entries for exact date</returns>
         [HttpGet]
-        public async Task<IEnumerable<ElectricityPrice>> ElectricityPrice(int ago = 0, string date = "")
-        {
-            return await GetElectricityPrice(ago, date);
-        }
-
-        private async Task<IEnumerable<ElectricityPrice>> GetElectricityPrice(int ago, string date)
+        public async Task<ActionResult<ElectricityPrice>> GetElectricityPrice(int ago, string date = "")
         {
             string query = "SELECT * FROM Prices WHERE 1=1";
             string agoQuery = $" AND CAST(date AS DATE) BETWEEN DATEADD(DAY, -{ago}, CAST(GETDATE() AS DATE)) AND CAST(GETDATE() AS DATE)";
@@ -55,12 +50,12 @@ namespace RestlessFalcon.Controllers
                 using var conn = _dbHelper.GetDatabaseConnection(Constants.ELECTRICITYPRICECONNECTIONSTRINGNAME);
                 conn.Open();
                 var results = await conn.QueryAsync<ElectricityPrice>(query);
-                return results;
+                return Ok(results);
             }
             catch (Exception ex)
             {
                 _logger.WriteErrorLog(ex.Message);
-                throw;
+                return BadRequest($"Error fetching electricity prices: {ex.Message}");
             }
         }
 
@@ -80,43 +75,38 @@ namespace RestlessFalcon.Controllers
 
             try
             {
-                using (var conn = _dbHelper.GetDatabaseConnection(Constants.ELECTRICITYPRICECONNECTIONSTRINGNAME))
+                using var conn = _dbHelper.GetDatabaseConnection(Constants.ELECTRICITYPRICECONNECTIONSTRINGNAME);
+                conn.Open();
+                var results = await conn.QueryAsync<ElectricityPrice>(query);
+                if (results.Any() && results.Count() < 24)
                 {
-                    conn.Open();
-                    var results = await conn.QueryAsync<ElectricityPrice>(query);
-                    if (results.Any() && results.Count() < 24)
-                    {
-                        await conn.ExecuteAsync($"DELETE FROM Prices WHERE CAST(Date AS DATE) = {prices[0].Date}");
-                    }
-                    else if (results.Count() == 24)
-                    {
-                        return Ok();
-                    }
+                    await conn.ExecuteAsync($"DELETE FROM Prices WHERE CAST(Date AS DATE) = {prices[0].Date}");
+                }
+                else if (results.Count() == 24 || results.Count() == 96)
+                {
+                    return Ok($"Already had {results.Count()} prices");
                 }
 
             }
             catch (Exception ex)
             {
                 _logger.WriteErrorLog($"Exception {ex.Message} used query {query}");
-                throw;
+                return BadRequest($"Error checking existing prices: {ex.Message}");
             }
             
             query = "INSERT INTO Prices(Date, Price, Hour) VALUES (@Date, @Price, @Hour)";
             try
             {
-                using (var conn = _dbHelper.GetDatabaseConnection(Constants.ELECTRICITYPRICECONNECTIONSTRINGNAME))
-                {
-                    conn.Open();
-                    
-                    await conn.ExecuteAsync(query, prices);
-                    
-                }
+                using var conn = _dbHelper.GetDatabaseConnection(Constants.ELECTRICITYPRICECONNECTIONSTRINGNAME);
+                conn.Open();
+                await conn.ExecuteAsync(query, prices);
             }
             catch (Exception ex)
             {
                 _logger.WriteErrorLog($"Exception {ex.Message} used query {query}");
+                return BadRequest($"Error inserting prices: {ex.Message}");
             }
-            return Ok();
+            return Ok($"Inserted {prices.Count} prices");
         }
     }
 }

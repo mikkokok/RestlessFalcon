@@ -13,17 +13,14 @@ namespace RestlessFalcon.Controllers
     /// </summary>
     [Route("api/[controller]")]
     [ApiController]
-    public class SensorController : RestlessFalconControllerBase
+    public class SensorController(IDatabaseHelper dbHelper) : RestlessFalconControllerBase(dbHelper)
     {
-        public SensorController(IDatabaseHelper dbHelper) : base(dbHelper)
-        {
-        }
         /// <summary>
         /// Fetches all sensors from the database
         /// </summary>
         /// <returns></returns>
         [HttpGet]
-        public async Task<IEnumerable<Sensor>> GetSensors()
+        public async Task<ActionResult<Sensor>> GetSensors()
         {
             try
             {
@@ -31,14 +28,13 @@ namespace RestlessFalcon.Controllers
                 const string query = "SELECT * FROM Sensors";
                 conn.Open();
                 var results = await conn.QueryAsync<Sensor>(query);
-                return results;
+                return Ok(results);
             }
             catch (Exception ex)
             {
                 _logger.WriteErrorLog(ex.Message);
-                throw;
+                return NotFound();
             }
-
         }
         /// <summary>
         /// Creates new sensor for the environment
@@ -54,17 +50,15 @@ namespace RestlessFalcon.Controllers
 
             try
             {
-                using (var conn = _dbHelper.GetDatabaseConnection(Constants.SENSORSCONNECTIONSTRINGNAME))
-                {
-                    var query = $"INSERT INTO Sensors(Name, Location, Model) VALUES ('{sensor.Name}', '{sensor.Location}', '{sensor.Model}')";
-                    conn.Open();
-                    await conn.QueryAsync<Sensor>(query);
-                }
+                using var conn = _dbHelper.GetDatabaseConnection(Constants.SENSORSCONNECTIONSTRINGNAME);
+                var query = $"INSERT INTO Sensors(Name, Location, Model) VALUES ('{sensor.Name}', '{sensor.Location}', '{sensor.Model}')";
+                conn.Open();
+                await conn.QueryAsync<Sensor>(query);
             }
             catch (Exception ex)
             {
                 _logger.WriteErrorLog(ex.Message);
-                return NotFound();
+                return BadRequest($"Error inserting sensor: {ex.Message}");
             }
             return Ok();
         }
@@ -81,17 +75,15 @@ namespace RestlessFalcon.Controllers
                 return Forbid();
             try
             {
-                using (var conn = _dbHelper.GetDatabaseConnection(Constants.SENSORSCONNECTIONSTRINGNAME))
-                {
-                    var query = $"DELETE FROM Sensors WHERE Id = {id}";
-                    conn.Open();
-                    await conn.QueryAsync<Sensor>(query);
-                }
+                using var conn = _dbHelper.GetDatabaseConnection(Constants.SENSORSCONNECTIONSTRINGNAME);
+                var query = $"DELETE FROM Sensors WHERE Id = {id}";
+                conn.Open();
+                await conn.QueryAsync<Sensor>(query);
             }
             catch (Exception ex)
             {
                 _logger.WriteErrorLog(ex.Message);
-                return NotFound();
+                return BadRequest($"Error inserting sensor: {ex.Message}");
             }
             return Ok();
         }

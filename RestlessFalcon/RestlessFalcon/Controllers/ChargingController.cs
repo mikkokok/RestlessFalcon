@@ -15,22 +15,14 @@ namespace RestlessFalcon.Controllers
     /// Creates and fetches entries for car charging
     /// </summary>
     [Route("api/[controller]")]
-    public class ChargingController : RestlessFalconControllerBase
+    public class ChargingController(IDatabaseHelper dbHelper) : RestlessFalconControllerBase(dbHelper)
     {
-        public ChargingController(IDatabaseHelper dbHelper) : base(dbHelper)
-        {
-        }
         /// <summary>
         /// Fetches all entries of car charge data. Optional filters number of history per days and entries for exact date
         /// </summary>
         /// <returns>Returns list of car charge entries. Optional filters number of history per days and entries for exact date</returns>
         [HttpGet]
-        public async Task<IEnumerable<ElectricityPrice>> ChargeAmount(int ago = 0, string date = "")
-        {
-            return await GetChargeAmount(ago, date);
-        }
-
-        private async Task<IEnumerable<ElectricityPrice>> GetChargeAmount(int ago, string date)
+        public async Task<ActionResult<CarCharge>> GetChargeAmount(int ago, string date = "")
         {
             string query = "SELECT * FROM Charges WHERE 1=1";
             string agoQuery = $" AND CAST(date AS DATE) BETWEEN DATEADD(DAY, -{ago}, CAST(GETDATE() AS DATE)) AND CAST(GETDATE() AS DATE)";
@@ -53,13 +45,13 @@ namespace RestlessFalcon.Controllers
             {
                 using var conn = _dbHelper.GetDatabaseConnection(Constants.ELECTRICITYPRICECONNECTIONSTRINGNAME);
                 conn.Open();
-                var results = await conn.QueryAsync<ElectricityPrice>(query);
-                return results;
+                var results = await conn.QueryAsync<CarCharge>(query);
+                return Ok(results);
             }
             catch (Exception ex)
             {
                 _logger.WriteErrorLog(ex.Message);
-                throw;
+                return BadRequest($"Error fetching car charge amounts: {ex.Message}");
             }
         }
 
@@ -86,6 +78,7 @@ namespace RestlessFalcon.Controllers
             catch (Exception ex)
             {
                 _logger.WriteErrorLog($"Exception {ex.Message} used query {query}");
+                return BadRequest($"Error adding car charge entry: {ex.Message}");
             }
             return Ok();
         }

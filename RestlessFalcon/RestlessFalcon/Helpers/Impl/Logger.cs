@@ -1,24 +1,18 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
+﻿using System.Diagnostics;
 using System.Threading.Tasks;
 
 namespace RestlessFalcon.Helpers.Impl
 {
-
-
-
+#pragma warning disable CA1416 // Validate platform compatibility
     public class Logger
     {
-        private string _source = "RestlessFalcon";
-        private string _log = "Application";
+        private readonly string _source = "RestlessFalcon";
+        private readonly string _log = "Application";
 
         public Logger()
         {
             if (!EventLog.SourceExists(_source))
                 EventLog.CreateEventSource(_source, _log);
-
         }
         public void WriteWarningLog(string message)
         {

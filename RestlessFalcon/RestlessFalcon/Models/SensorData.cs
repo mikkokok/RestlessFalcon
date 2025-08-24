@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-
-namespace RestlessFalcon.Models
+﻿namespace RestlessFalcon.Models
 {
     public class SensorData
     {
@@ -13,11 +8,9 @@ namespace RestlessFalcon.Models
         public double Humidity { get; set; }
         public double Pressure { get; set; }
         public double ValvePosition { get; set; }
-        public string Time { get; set; }
+        public string? Time { get; set; }
         public float UsedPower { get; set; }
         public int BurnerUseTime { get; set; }
-        public int PowerYield { get; set; }
-
-        
+        public float PowerYield { get; set; }
     }
 }

@@ -14,11 +14,8 @@ namespace RestlessFalcon.Controllers
     /// </summary>
     [Route("api/[controller]")]
     [ApiController]
-    public class SensorDataController : RestlessFalconControllerBase
+    public class SensorDataController(IDatabaseHelper dbHelper) : RestlessFalconControllerBase(dbHelper)
     {
-        public SensorDataController(IDatabaseHelper dbHelper) : base(dbHelper)
-        {
-        }
         /// <summary>
         /// Fetches all entries of sensor data. Optional filters sensorid, number of history per days and amount of entries that are fetched
         /// </summary>
@@ -94,24 +91,20 @@ namespace RestlessFalcon.Controllers
         {
             if (!_authKeyHelper.CheckAuthKeyValidity(authKey))
                 return Forbid();
-            if (data.Time == null)
-            {
-                data.Time = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss").Replace(".", ":");
-            }
+            data.Time ??= DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss").Replace(".", ":");
 
             var nfi = new CultureInfo("en-US", false).NumberFormat;
             var query = $"INSERT INTO Data(SensorId, Temperature, Humidity, Pressure, ValvePosition, UsedPower, Time, BurnerUseTime, PowerYield) VALUES ((SELECT id FROM Sensors WHERE Name = '{sensorName}'), {data.Temperature.ToString(nfi)}, {data.Humidity.ToString(nfi)}, {data.Pressure.ToString(nfi)}, {data.ValvePosition}, '{data.UsedPower.ToString(nfi)}', '{data.Time}', '{data.BurnerUseTime}', '{data.PowerYield}')";
             try
             {
-                using (var conn = _dbHelper.GetDatabaseConnection(Constants.SENSORSCONNECTIONSTRINGNAME))
-                {
-                    conn.Open();
-                    var results = await conn.QueryAsync<SensorData>(query);
-                }
+                using var conn = _dbHelper.GetDatabaseConnection(Constants.SENSORSCONNECTIONSTRINGNAME);
+                conn.Open();
+                var results = await conn.QueryAsync<SensorData>(query);
             }
             catch (Exception ex)
             {
                 _logger.WriteErrorLog($"Exception {ex.Message} used query {query}");
+                return BadRequest($"Error inserting data: {ex.Message}");
             }
             return Ok();
         }
