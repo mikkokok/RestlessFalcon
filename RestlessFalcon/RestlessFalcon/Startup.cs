@@ -1,15 +1,16 @@
-﻿using System;
-using System.IO;
-using System.Reflection;
-using Microsoft.AspNetCore.Builder;
+﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.OpenApi.Models;
+using RestlessFalcon.Converters;
 using RestlessFalcon.Helpers;
 using RestlessFalcon.Helpers.Impl;
-using Microsoft.OpenApi.Models;
+using System;
+using System.IO;
+using System.Reflection;
 
 
 namespace RestlessFalcon
@@ -20,6 +21,11 @@ namespace RestlessFalcon
 
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddMvc(options => options.EnableEndpointRouting = false)
+            .AddJsonOptions(options =>
+            {
+            options.JsonSerializerOptions.Converters.Add(new CustomDateTimeConverter());
+            });
             services.AddMvc(options => options.EnableEndpointRouting = false);
             services.AddTransient<IDatabaseHelper, DatabaseHelper>();
             services.AddSwaggerGen(c =>
