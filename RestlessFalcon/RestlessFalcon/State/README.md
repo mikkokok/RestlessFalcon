@@ -8,6 +8,7 @@ The API targets .NET 10 and stores reusable JSON state in the separate SQL Serve
 - Existing `MasterKey` and `AuthorisationConnection` settings validate `X-Auth-Key`. All new state reads and writes require authentication. Existing API query/body auth-key inputs are unchanged.
 - Use SQL Server 2016+ with database compatibility level 130 or newer. Run migrations with a separate schema-deployment identity; the runtime identity needs only SELECT, INSERT, UPDATE and DELETE on `dbo.StateEntries`.
 - Install the .NET 10 SDK for builds and the .NET 10 ASP.NET Core Hosting Bundle for IIS framework-dependent hosting. A .NET 11 runtime alone does not provide default major-version roll-forward for a .NET 10 app. Restart IIS after installing the bundle.
+- IDE builds targeting .NET 10 require Visual Studio 18.0 or newer. The .NET 10 SDK CLI can build the solution independently of an older Visual Studio installation.
 - Publish with `dotnet publish -c Release`. Migration scripts are copied to the publish output. Apply the schema before enabling state traffic.
 - The application never runs migrations automatically. The old `Startup.cs` and controllers have been replaced by `Program.cs` and Minimal API handlers. Swagger remains at `/swagger`.
 
@@ -82,4 +83,17 @@ Invoke-RestMethod -Method Delete -Uri "$base/family-car" -Headers $headers
 
 ## Validation
 
-Local validation must use configuration overrides and an in-memory state store or an isolated SQL Server database, not the configured remote database. Before production deployment, run the migration in a disposable database and verify reapplication, CRUD, duplicate creates, UTC timestamps, namespace isolation, all JSON types and rollback. No remote database is modified by build/publish.
+`RestlessFalcon.Validation` is a dependency-free executable validation harness included in the solution. Run these commands from the solution directory:
+
+```powershell
+# HTTP/Swagger/binding/auth/JSON checks with all real configuration removed and database access blocked.
+dotnet run --project .\RestlessFalcon.Validation\RestlessFalcon.Validation.csproj
+
+# Also verify real migration/repository behavior in a generated disposable LocalDB database.
+SqlLocalDB start MSSQLLocalDB
+dotnet run --project .\RestlessFalcon.Validation\RestlessFalcon.Validation.csproj -- --sql
+```
+
+The optional SQL checks use only the hard-coded `(localdb)\MSSQLLocalDB` instance with integrated authentication. They create a uniquely named database and delete it in a `finally` block. They never read the configured remote connection string. Checks cover migration reapplication, CRUD, duplicates, UTC timestamps, namespace isolation, JSON types/constraint, rollback safeguards and rollback/reapplication.
+
+This console harness is run with `dotnet run`, not `dotnet test`. Before production deployment, verify the remote server's version, schema permissions and connectivity separately. No remote database is modified by validation, build or publish.

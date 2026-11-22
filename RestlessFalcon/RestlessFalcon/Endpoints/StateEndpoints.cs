@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
@@ -51,11 +52,11 @@ public static class StateEndpoints
                 return Results.Problem("The state operation could not be completed.", statusCode: 500);
             }
         });
-        group.MapGet("", List).WithName("ListStateKeys");
-        group.MapGet("/{key}", Get).WithName("GetState");
-        group.MapPost("", Create).WithName("CreateState");
-        group.MapPut("/{key}", Update).WithName("UpdateState");
-        group.MapDelete("/{key}", Delete).WithName("DeleteState");
+        group.MapGet("", List).WithName("ListStateKeys").Produces<IReadOnlyList<StateKey>>().Produces(400).Produces(403);
+        group.MapGet("/{key}", Get).WithName("GetState").Produces<StateEntry>().Produces(404).Produces(403);
+        group.MapPost("", Create).WithName("CreateState").Produces<StateEntry>(201).Produces(409).Produces(400).Produces(403);
+        group.MapPut("/{key}", Update).WithName("UpdateState").Produces<StateEntry>().Produces(404).Produces(400).Produces(403);
+        group.MapDelete("/{key}", Delete).WithName("DeleteState").Produces(204).Produces(404).Produces(403);
         return app;
     }
 
