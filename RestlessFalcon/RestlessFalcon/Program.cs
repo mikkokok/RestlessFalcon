@@ -4,7 +4,7 @@ using System.Reflection;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.OpenApi;
+using Microsoft.OpenApi.Models;
 using RestlessFalcon.Converters;
 using RestlessFalcon.Endpoints;
 using RestlessFalcon.Helpers;
