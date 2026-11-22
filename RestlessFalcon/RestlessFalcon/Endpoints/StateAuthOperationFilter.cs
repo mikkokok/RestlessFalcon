@@ -10,7 +10,7 @@ public sealed class StateAuthOperationFilter : IOperationFilter
     {
         if (context.ApiDescription.RelativePath?.StartsWith("api/state/") != true)
             return;
-        operation.Parameters ??= new List<IOpenApiParameter>();
+        operation.Parameters ??= new List<OpenApiParameter>();
         operation.Parameters.Add(new OpenApiParameter
         {
             Name = "X-Auth-Key",
