@@ -17,7 +17,7 @@ public sealed class StateAuthOperationFilter : IOperationFilter
             In = ParameterLocation.Header,
             Required = true,
             Description = "Existing application authentication key. Required for every state operation.",
-            Schema = new OpenApiSchema { Type = JsonSchemaType.String }
+            Schema = new OpenApiSchema { Type = "string" }
         });
     }
 }
