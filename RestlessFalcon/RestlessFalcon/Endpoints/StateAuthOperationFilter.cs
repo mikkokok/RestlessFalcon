@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using Microsoft.OpenApi;
+using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace RestlessFalcon.Endpoints;
