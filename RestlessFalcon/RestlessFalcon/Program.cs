@@ -9,12 +9,14 @@ using RestlessFalcon.Converters;
 using RestlessFalcon.Endpoints;
 using RestlessFalcon.Helpers;
 using RestlessFalcon.Helpers.Impl;
+using RestlessFalcon.State;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.ConfigureHttpJsonOptions(options =>
     options.SerializerOptions.Converters.Add(new CustomDateTimeConverter()));
 builder.Services.AddTransient<IDatabaseHelper, DatabaseHelper>();
 builder.Services.AddScoped<AuthKeyHelper>();
+builder.Services.AddScoped<IStateStore, SqlStateStore>();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
@@ -42,6 +44,7 @@ app.UseSwagger();
 app.UseSwaggerUI(options =>
     options.SwaggerEndpoint("/swagger/v1/swagger.json", "Restlessfalcon API"));
 app.MapExistingEndpoints();
+app.MapStateEndpoints();
 app.Run();
 
 // Exposes the entry point to local integration tests without using MVC hosting.
