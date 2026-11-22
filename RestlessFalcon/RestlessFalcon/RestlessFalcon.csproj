@@ -10,6 +10,7 @@
 
   <ItemGroup>
     <Folder Include="wwwroot\" />
+    <None Update="Migrations\KeyValueDB\*.sql" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>
