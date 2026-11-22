@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace RestlessFalcon.Endpoints;
@@ -10,14 +10,14 @@ public sealed class StateAuthOperationFilter : IOperationFilter
     {
         if (context.ApiDescription.RelativePath?.StartsWith("api/state/") != true)
             return;
-        operation.Parameters ??= new List<OpenApiParameter>();
+        operation.Parameters ??= new List<IOpenApiParameter>();
         operation.Parameters.Add(new OpenApiParameter
         {
             Name = "X-Auth-Key",
             In = ParameterLocation.Header,
             Required = true,
             Description = "Existing application authentication key. Required for every state operation.",
-            Schema = new OpenApiSchema { Type = "string" }
+            Schema = new OpenApiSchema { Type = JsonSchemaType.String }
         });
     }
 }
