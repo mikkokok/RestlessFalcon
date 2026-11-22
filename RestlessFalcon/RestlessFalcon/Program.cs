@@ -1,24 +1,48 @@
-﻿using System.IO;
-using Microsoft.AspNetCore;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Configuration;
+﻿using System;
+using System.IO;
+using System.Reflection;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.OpenApi;
+using RestlessFalcon.Converters;
+using RestlessFalcon.Endpoints;
+using RestlessFalcon.Helpers;
+using RestlessFalcon.Helpers.Impl;
 
-
-namespace RestlessFalcon
+var builder = WebApplication.CreateBuilder(args);
+builder.Services.ConfigureHttpJsonOptions(options =>
+    options.SerializerOptions.Converters.Add(new CustomDateTimeConverter()));
+builder.Services.AddTransient<IDatabaseHelper, DatabaseHelper>();
+builder.Services.AddScoped<AuthKeyHelper>();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(options =>
 {
-    public class Program
+    options.SwaggerDoc("v1", new OpenApiInfo
     {
-        public static void Main(string[] args)
-        {
-            CreateWebHostBuilder(args).Build().Run();
-        }
+        Version = "v1",
+        Title = "Restlessfalcon API",
+        Description = "Collection of inhouse APIs",
+        Contact = new OpenApiContact { Name = "Mikko Kokkonen", Email = "outlook.com" },
+        License = new OpenApiLicense { Name = "Licensed to MK" }
+    });
+    var xmlPath = Path.Combine(AppContext.BaseDirectory,
+        $"{Assembly.GetExecutingAssembly().GetName().Name}.xml");
+    if (File.Exists(xmlPath))
+        options.IncludeXmlComments(xmlPath);
+});
 
-        public static IWebHostBuilder CreateWebHostBuilder(string[] args) =>
-            WebHost.CreateDefaultBuilder(args).ConfigureAppConfiguration((hostingContext, config) =>
+var app = builder.Build();
+if (app.Environment.IsDevelopment())
+    app.UseDeveloperExceptionPage();
+else
+    app.UseHsts();
+app.UseHttpsRedirection();
+app.UseSwagger();
+app.UseSwaggerUI(options =>
+    options.SwaggerEndpoint("/swagger/v1/swagger.json", "Restlessfalcon API"));
+app.MapExistingEndpoints();
+app.Run();
 
-        {
-            config.SetBasePath(Directory.GetCurrentDirectory());
-            config.AddJsonFile("appsettings.json", optional: false, reloadOnChange: false);
-        }).UseStartup<Startup>();
-    }
-}
+// Exposes the entry point to local integration tests without using MVC hosting.
+public partial class Program { }
