@@ -28,8 +28,11 @@ namespace RestlessFalcon.Helpers.Impl
 
         public bool CheckAuthKeyValidity(string authKey)
         {
+            if (string.IsNullOrWhiteSpace(authKey))
+                return false;
             try
             {
+                CleanAuthKeys();
                 if (_authKeys.Select(entry => entry.Value).Contains(authKey))
                 {
                     return true;
@@ -49,7 +52,7 @@ namespace RestlessFalcon.Helpers.Impl
             }
             catch(Exception ex) 
             {
-                _logger.WriteErrorLog($"Got error in AuthKeyHelper, {ex}");
+                _logger.WriteErrorLog($"Auth key lookup failed ({ex.GetType().Name}).");
             }
 
             return false;
@@ -57,13 +60,14 @@ namespace RestlessFalcon.Helpers.Impl
         public async Task<string> RenewAuthKey(int id)
         {
             using var conn = _dbHelper.GetDatabaseConnection(Constants.AUTHORISATIONCONNECTIONSTRINGNAME);
-            var query = $"DELETE FROM AuthKey WHERE id = {id}";
             conn.Open();
-            await conn.QueryAsync<AuthKey>(query);
-            var newKey = Guid.NewGuid();
-            query = $"INSERT INTO AuthKey(Value) VALUES ('{newKey.ToString()}')";
-            await conn.QueryAsync(query);
-            return newKey.ToString();
+            using var transaction = conn.BeginTransaction();
+            await conn.ExecuteAsync("DELETE FROM AuthKey WHERE Id = @id", new { id }, transaction);
+            var newKey = Guid.NewGuid().ToString();
+            await conn.ExecuteAsync("INSERT INTO AuthKey(Value) VALUES (@newKey)", new { newKey }, transaction);
+            transaction.Commit();
+            _authKeys.RemoveAll(key => key.Id == id && key.Id != 1);
+            return newKey;
         }
 
         private void CleanAuthKeys()

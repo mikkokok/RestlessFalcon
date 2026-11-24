@@ -1,24 +1,65 @@
-﻿using System.IO;
-using Microsoft.AspNetCore;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Configuration;
+﻿using System;
+using System.IO;
+using System.Reflection;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.OpenApi;
+using RestlessFalcon.Converters;
+using RestlessFalcon.Endpoints;
+using RestlessFalcon.Helpers;
+using RestlessFalcon.Helpers.Impl;
+using RestlessFalcon.State;
 
-
-namespace RestlessFalcon
+// Exposes the entry point to local integration tests without using MVC hosting.
+public partial class Program
 {
-    public class Program
+    public static void Main(string[] args) => BuildApplication(args).Run();
+
+    public static WebApplication BuildApplication(string[] args, Action<WebApplicationBuilder>? configure = null)
     {
-        public static void Main(string[] args)
+        var builder = WebApplication.CreateBuilder(args);
+        builder.Services.ConfigureHttpJsonOptions(options =>
+            options.SerializerOptions.Converters.Add(new CustomDateTimeConverter()));
+        builder.Services.AddTransient<IDatabaseHelper, DatabaseHelper>();
+        builder.Services.AddScoped<AuthKeyHelper>();
+        builder.Services.AddScoped<IStateStore, SqlStateStore>();
+        builder.Services.AddEndpointsApiExplorer();
+        builder.Services.AddSwaggerGen(options =>
         {
-            CreateWebHostBuilder(args).Build().Run();
-        }
+            options.SwaggerDoc("v1", new OpenApiInfo
+            {
+                Version = "v1",
+                Title = "Restlessfalcon API",
+                Description = "Collection of inhouse APIs",
+                Contact = new OpenApiContact { Name = "Mikko Kokkonen", Email = "outlook.com" },
+                License = new OpenApiLicense { Name = "Licensed to MK" }
+            });
+            var xmlPath = Path.Combine(AppContext.BaseDirectory,
+                $"{Assembly.GetExecutingAssembly().GetName().Name}.xml");
+            if (File.Exists(xmlPath))
+                options.IncludeXmlComments(xmlPath);
+            options.OperationFilter<StateAuthOperationFilter>();
+        });
 
-        public static IWebHostBuilder CreateWebHostBuilder(string[] args) =>
-            WebHost.CreateDefaultBuilder(args).ConfigureAppConfiguration((hostingContext, config) =>
+        // Allow for additional configuration in tests
+        configure?.Invoke(builder);
 
-        {
-            config.SetBasePath(Directory.GetCurrentDirectory());
-            config.AddJsonFile("appsettings.json", optional: false, reloadOnChange: false);
-        }).UseStartup<Startup>();
+        var app = builder.Build();
+        if (app.Environment.IsDevelopment())
+            app.UseDeveloperExceptionPage();
+        else
+            app.UseHsts();
+        app.UseHttpsRedirection();
+        app.UseSwagger();
+        app.UseSwaggerUI(options =>
+            options.SwaggerEndpoint("/swagger/v1/swagger.json", "Restlessfalcon API"));
+        app.MapAuthorisationEndpoints();
+        app.MapChargingEndpoints();
+        app.MapElectricityPriceEndpoints();
+        app.MapSensorEndpoints();
+        app.MapSensorDataEndpoints();
+        app.MapStateEndpoints();
+        return app;
     }
 }
