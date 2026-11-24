@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using RestlessFalcon.Helpers;
 using RestlessFalcon.Helpers.Impl;
 using RestlessFalcon.State;
 
@@ -26,9 +27,9 @@ public static class StateEndpoints
         var group = app.MapGroup("/api/state/{namespace}").WithTags("State");
         group.AddEndpointFilter(async (context, next) =>
         {
-            var headers = context.HttpContext.Request.Headers["X-Auth-Key"];
-            if (headers.Count != 1 || string.IsNullOrWhiteSpace(headers[0]) ||
-                !context.HttpContext.RequestServices.GetRequiredService<AuthKeyHelper>().CheckAuthKeyValidity(headers[0]!))
+            var authKeys = context.HttpContext.Request.Query["authKey"];
+            if (authKeys.Count != 1 || !AuthorizationHelper.IsAuthorized(
+                context.HttpContext.RequestServices.GetRequiredService<AuthKeyHelper>(), authKeys[0]))
                 return Results.StatusCode(403);
             var ns = context.HttpContext.Request.RouteValues["namespace"]?.ToString();
             if (!IsValidIdentifier(ns, 100))

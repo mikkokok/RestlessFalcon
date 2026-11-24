@@ -13,8 +13,8 @@ public sealed class StateAuthOperationFilter : IOperationFilter
         operation.Parameters ??= new List<IOpenApiParameter>();
         operation.Parameters.Add(new OpenApiParameter
         {
-            Name = "X-Auth-Key",
-            In = ParameterLocation.Header,
+            Name = "authKey",
+            In = ParameterLocation.Query,
             Required = true,
             Description = "Existing application authentication key. Required for every state operation.",
             Schema = new OpenApiSchema { Type = JsonSchemaType.String }

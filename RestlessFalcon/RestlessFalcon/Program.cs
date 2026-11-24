@@ -54,7 +54,11 @@ public partial class Program
         app.UseSwagger();
         app.UseSwaggerUI(options =>
             options.SwaggerEndpoint("/swagger/v1/swagger.json", "Restlessfalcon API"));
-        app.MapExistingEndpoints();
+        app.MapAuthorisationEndpoints();
+        app.MapChargingEndpoints();
+        app.MapElectricityPriceEndpoints();
+        app.MapSensorEndpoints();
+        app.MapSensorDataEndpoints();
         app.MapStateEndpoints();
         return app;
     }

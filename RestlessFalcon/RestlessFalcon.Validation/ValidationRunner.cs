@@ -53,58 +53,69 @@ public static class ValidationRunner
                 (HttpMethod.Delete, root + "/car", null)
             })
                 await Expect(client, method, path, body, HttpStatusCode.Forbidden);
-            client.DefaultRequestHeaders.Add("X-Auth-Key", "unknown-key");
+            client.DefaultRequestHeaders.Add("X-Auth-Key", TestKey);
             await Expect(client, HttpMethod.Get, root, null, HttpStatusCode.Forbidden);
             client.DefaultRequestHeaders.Remove("X-Auth-Key");
-            client.DefaultRequestHeaders.Add("X-Auth-Key", TestKey);
+            await Expect(client, HttpMethod.Get, root + "?authKey=unknown-key", null, HttpStatusCode.Forbidden);
 
-            var created = await Expect(client, HttpMethod.Post, root,
+            var created = await ExpectAuthorized(client, HttpMethod.Post, root,
                 """{"key":"car","value":{"enabled":true,"windows":[{"start":"2026-01-20T06:30:00+02:00","end":"2026-01-20T07:30:00+02:00"}]}}""",
                 HttpStatusCode.Created);
             Assert(created.GetProperty("value").GetProperty("enabled").GetBoolean(), "Structured JSON response");
             Assert(created.GetProperty("createdAt").GetDateTimeOffset().Offset == TimeSpan.Zero, "UTC timestamps");
-            await Expect(client, HttpMethod.Post, root, "{\"key\":\"car\",\"value\":null}", HttpStatusCode.Conflict);
-            var read = await Expect(client, HttpMethod.Get, root + "/car", null, HttpStatusCode.OK);
+            await ExpectAuthorized(client, HttpMethod.Post, root, "{\"key\":\"car\",\"value\":null}", HttpStatusCode.Conflict);
+            var read = await ExpectAuthorized(client, HttpMethod.Get, root + "/car", null, HttpStatusCode.OK);
             Assert(read.GetProperty("value").GetProperty("windows").GetArrayLength() == 1, "Heating window round trip");
-            var updated = await Expect(client, HttpMethod.Put, root + "/car", "{\"value\":false}", HttpStatusCode.OK);
+            var updated = await ExpectAuthorized(client, HttpMethod.Put, root + "/car", "{\"value\":false}", HttpStatusCode.OK);
             Assert(updated.GetProperty("value").ValueKind == JsonValueKind.False, "Boolean remains JSON boolean");
             Assert(created.GetProperty("createdAt").GetString() == updated.GetProperty("createdAt").GetString(), "Creation timestamp preserved");
-            var keys = await Expect(client, HttpMethod.Get, root + "?skip=0&take=1", null, HttpStatusCode.OK);
+            var keys = await ExpectAuthorized(client, HttpMethod.Get, root + "?skip=0&take=1", null, HttpStatusCode.OK);
             Assert(keys.GetArrayLength() == 1 && keys[0].GetProperty("key").GetString() == "car", "Paginated key list");
-            await Expect(client, HttpMethod.Get, "/api/state/other/car", null, HttpStatusCode.NotFound);
-            await Expect(client, HttpMethod.Get, root + "/Car", null, HttpStatusCode.NotFound);
-            await Expect(client, HttpMethod.Delete, root + "/car", null, HttpStatusCode.NoContent);
-            await Expect(client, HttpMethod.Get, root + "/car", null, HttpStatusCode.NotFound);
-            await Expect(client, HttpMethod.Put, root + "/car", "{\"value\":{}}", HttpStatusCode.NotFound);
-            await Expect(client, HttpMethod.Delete, root + "/car", null, HttpStatusCode.NotFound);
+            await ExpectAuthorized(client, HttpMethod.Get, "/api/state/other/car", null, HttpStatusCode.NotFound);
+            await ExpectAuthorized(client, HttpMethod.Get, root + "/Car", null, HttpStatusCode.NotFound);
+            await ExpectAuthorized(client, HttpMethod.Delete, root + "/car", null, HttpStatusCode.NoContent);
+            await ExpectAuthorized(client, HttpMethod.Get, root + "/car", null, HttpStatusCode.NotFound);
+            await ExpectAuthorized(client, HttpMethod.Put, root + "/car", "{\"value\":{}}", HttpStatusCode.NotFound);
+            await ExpectAuthorized(client, HttpMethod.Delete, root + "/car", null, HttpStatusCode.NotFound);
 
             foreach (var raw in new[] { "{}", "[]", "\"a string\"", "123.45", "true", "false", "null" })
             {
                 using var document = JsonDocument.Parse(raw);
                 var decoded = SqlStateStore.Decode(SqlStateStore.Encode(document.RootElement));
                 Assert(decoded.GetRawText() == document.RootElement.GetRawText(), "SQL JSON envelope round trip: " + raw);
-                var entry = await Expect(client, HttpMethod.Post, root,
+                var entry = await ExpectAuthorized(client, HttpMethod.Post, root,
                     "{\"key\":\"json-" + checks + "\",\"value\":" + raw + "}", HttpStatusCode.Created);
                 Assert(entry.GetProperty("value").ValueKind == decoded.ValueKind, "HTTP JSON type preserved");
             }
-            await Expect(client, HttpMethod.Post, root, "{\"key\":\"missing-value\"}", HttpStatusCode.BadRequest);
-            await Expect(client, HttpMethod.Put, root + "/car", "{}", HttpStatusCode.BadRequest);
-            await Expect(client, HttpMethod.Post, root, "{\"key\":\"bad key\",\"value\":{}}", HttpStatusCode.BadRequest);
-            await Expect(client, HttpMethod.Post, root, "{\"key\":\"car\",\"value\":", HttpStatusCode.BadRequest);
-            await Expect(client, HttpMethod.Get, "/api/state/bad%20namespace/car", null, HttpStatusCode.BadRequest);
-            await Expect(client, HttpMethod.Get, root + "?take=1001", null, HttpStatusCode.BadRequest);
-            await Expect(client, HttpMethod.Get, root + "?skip=-1", null, HttpStatusCode.BadRequest);
-            await Expect(client, HttpMethod.Get, root + "?take=bad", null, HttpStatusCode.BadRequest);
+            foreach (var (key, value) in new[]
+            {
+                ("weekday-morning", "0545-0123456-on"),
+                ("weekday-evening", "0700-0123456-off")
+            })
+            {
+                var entry = await ExpectAuthorized(client, HttpMethod.Post, root,
+                    JsonSerializer.Serialize(new { key, value }), HttpStatusCode.Created);
+                Assert(entry.GetProperty("key").GetString() == key && entry.GetProperty("value").GetString() == value,
+                    "Independent string-valued heating entry: " + key);
+            }
+            await ExpectAuthorized(client, HttpMethod.Post, root, "{\"key\":\"missing-value\"}", HttpStatusCode.BadRequest);
+            await ExpectAuthorized(client, HttpMethod.Put, root + "/car", "{}", HttpStatusCode.BadRequest);
+            await ExpectAuthorized(client, HttpMethod.Post, root, "{\"key\":\"bad key\",\"value\":{}}", HttpStatusCode.BadRequest);
+            await ExpectAuthorized(client, HttpMethod.Post, root, "{\"key\":\"car\",\"value\":", HttpStatusCode.BadRequest);
+            await ExpectAuthorized(client, HttpMethod.Get, "/api/state/bad%20namespace/car", null, HttpStatusCode.BadRequest);
+            await ExpectAuthorized(client, HttpMethod.Get, root + "?take=1001", null, HttpStatusCode.BadRequest);
+            await ExpectAuthorized(client, HttpMethod.Get, root + "?skip=-1", null, HttpStatusCode.BadRequest);
+            await ExpectAuthorized(client, HttpMethod.Get, root + "?take=bad", null, HttpStatusCode.BadRequest);
             Assert(!StateEndpoints.IsValidIdentifier("car\n", 200), "Reject trailing newline");
             Assert(!StateEndpoints.IsValidIdentifier(new string('a', 201), 200), "Reject oversized key");
             using (var large = JsonDocument.Parse(JsonSerializer.Serialize(new string('a', StateEndpoints.MaxValueBytes))))
                 Assert(!StateEndpoints.IsValidValue(large.RootElement), "Reject oversized JSON value");
 
             store.FailNext = true;
-            var error = await Expect(client, HttpMethod.Get, root, null, HttpStatusCode.InternalServerError);
+            var error = await ExpectAuthorized(client, HttpMethod.Get, root, null, HttpStatusCode.InternalServerError);
             Assert(!error.ToString().Contains("sensitive-marker"), "Sanitized database failure");
 
-            // Legacy write endpoints must not inherit the state header: their original auth inputs remain.
+            // Legacy write endpoints retain their original auth inputs.
             await Expect(client, HttpMethod.Post, "/api/Authorisation?keyId=1", "\"\"", HttpStatusCode.Forbidden);
             await Expect(client, HttpMethod.Post, "/api/Charging", "{}", HttpStatusCode.Forbidden);
             await Expect(client, HttpMethod.Post, "/api/ElectricityPrice", "[]", HttpStatusCode.Forbidden);
@@ -121,7 +132,8 @@ public static class ValidationRunner
                 Assert(paths.TryGetProperty(path, out _), "Swagger contains " + path);
             var operations = paths.GetProperty("/api/state/{namespace}/{key}");
             Assert(operations.GetProperty("get").GetProperty("parameters").EnumerateArray()
-                .Any(p => p.GetProperty("name").GetString() == "X-Auth-Key" && p.GetProperty("required").GetBoolean()), "Swagger auth header");
+                .Any(p => p.GetProperty("name").GetString() == "authKey" && p.GetProperty("in").GetString() == "query" &&
+                    p.GetProperty("required").GetBoolean()), "Swagger auth query parameter");
             Console.WriteLine($"PASS: {checks} local checks; no real database connection was possible.");
         }
         finally
@@ -130,6 +142,13 @@ public static class ValidationRunner
         }
         if (args.Contains("--sql", StringComparer.Ordinal))
             await SqlMigrationValidation.RunAsync();
+    }
+
+    private static Task<JsonElement> ExpectAuthorized(HttpClient client, HttpMethod method, string path, string? body,
+        HttpStatusCode expected)
+    {
+        var separator = path.Contains('?') ? '&' : '?';
+        return Expect(client, method, path + separator + "authKey=" + Uri.EscapeDataString(TestKey), body, expected);
     }
 
     private static async Task<JsonElement> Expect(HttpClient client, HttpMethod method, string path, string? body, HttpStatusCode expected)
